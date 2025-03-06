@@ -58,7 +58,7 @@ class BlogPost(db.Model):
     date: Mapped[str] = mapped_column(String(250), nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
     img_url: Mapped[str] = mapped_column(String(250), nullable=False)
-    comments = relationship("Comment", back_populates="parent_post")
+    comments = relationship("Comment", back_populates="parent_post", cascade="all, delete-orphan")
 
 
 # Create a User table for all your registered users.
@@ -69,16 +69,16 @@ class User(UserMixin, db.Model):
     password: Mapped[str] = mapped_column(String(100))
     name: Mapped[str] = mapped_column(String(1000))
     posts = relationship("BlogPost", back_populates="author")
-    comments = relationship("Comment", back_populates="author")
+    comments = relationship("Comment", back_populates="comment_author")
 
 
 class Comment(db.Model):
     __tablename__ = "comments"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    text: Mapped[str] = mapped_column(Text)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
 
     author_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("users.id"))
-    author = relationship("User", back_populates="comments")
+    comment_author = relationship("User", back_populates="comments")
 
     post_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("blog_posts.id"))
     parent_post = relationship("BlogPost", back_populates="comments")
@@ -179,7 +179,7 @@ def show_post(post_id):
 
         new_comment = Comment(
             text=comment_form.comment_body.data,
-            author=current_user,
+            comment_author=current_user,
             parent_post=requested_post
         )
         db.session.add(new_comment)
